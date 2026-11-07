@@ -1,0 +1,13 @@
+name: wraith-tooling
+description: Install the wraith-tooling console scripts for plugin repositories.
+branding:
+  icon: check-circle
+  color: gray-dark
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    - shell: bash
+      run: |
+        uv tool install --python 3.12 "$GITHUB_ACTION_PATH"
+        echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"

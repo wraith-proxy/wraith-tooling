@@ -1,0 +1,29 @@
+- id: wraith-lint-skills
+  name: lint skills and agents
+  entry: wraith-lint-skills
+  language: python
+  pass_filenames: false
+  always_run: true
+- id: wraith-build-copilot
+  name: copilot agents up to date
+  entry: wraith-build-copilot
+  args: [--check]
+  language: python
+  pass_filenames: false
+  always_run: true
+- id: wraith-privacy-scan
+  name: privacy scan
+  entry: wraith-privacy-scan
+  language: python
+- id: wraith-file-types
+  name: plugin directory file policy
+  entry: wraith-file-types
+  language: python
+  pass_filenames: false
+  always_run: true
+- id: wraith-check-plugin
+  name: plugin content checks
+  entry: wraith-check-plugin
+  language: python
+  pass_filenames: false
+  always_run: true

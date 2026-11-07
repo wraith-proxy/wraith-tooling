@@ -1,0 +1,44 @@
+commitizen:
+  name: cz_customize
+  version_provider: uv
+  version_scheme: semver
+  major_version_zero: true
+  update_changelog_on_bump: true
+  tag_format: v$version
+  bump_message: ":ghost: chore: release v$current_version -> v$new_version [skip ci]"
+  customize:
+    bump_map:
+      break: MAJOR
+      feature: MINOR
+      fix: PATCH
+      bug: PATCH
+    bump_pattern: '^👻 (feature|fix|bug|break)/WSK-\d{5}: '
+    commit_parser: '^👻 (?P<change_type>feature|fix|bug|break)/WSK-\d{5}: (?P<message>.*)'
+    change_type_map:
+      break: "Breaking Changes"
+      feature: "Features"
+      fix: "Bug Fixes"
+      bug: "Bug Fixes"
+    change_type_order: [break, feature, fix, bug]
+    changelog_pattern: '^👻 (feature|fix|bug|break)/WSK-\d{5}: '
+    example: '👻 feature/WSK-00001: add implementation plan'
+    message_template: '{{change_type}}: {{message}}'
+    questions:
+      - name: change_type
+        type: list
+        message: Select the type of change you are committing
+        choices:
+          - {name: "break:   A breaking change", value: break}
+          - {name: "feature: A new feature", value: feature}
+          - {name: "fix:     A standard fix", value: fix}
+          - {name: "bug:     A specific bug fix", value: bug}
+          - {name: "docs:     Documentation only (no release)", value: docs}
+          - {name: "chore:    Maintenance (no release)", value: chore}
+          - {name: "ci:       CI and tooling (no release)", value: ci}
+          - {name: "test:     Tests only (no release)", value: test}
+          - {name: "refactor: Refactor, no behaviour change (no release)", value: refactor}
+      - name: message
+        type: input
+        message: "Enter a brief description:"
+    schema: '<type>/<ticket>: <body>'
+    schema_pattern: '^👻 (feature|fix|bug|break|docs|chore|ci|test|refactor)/WSK-\d{5}: (.+)'

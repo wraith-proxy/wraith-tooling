@@ -1,0 +1,11 @@
+commitizen:
+  name: cz_customize
+  major_version_zero: true
+  customize:
+    bump_map:
+      break: MAJOR
+      feature: MINOR
+      fix: PATCH
+      bug: PATCH
+    bump_pattern: '^👻 (feature|fix|bug|break)/WSK-\d{5}: '
+    schema_pattern: '^👻 (feature|fix|bug|break|docs|chore|ci|test|refactor)/WSK-\d{5}: (.+)'
