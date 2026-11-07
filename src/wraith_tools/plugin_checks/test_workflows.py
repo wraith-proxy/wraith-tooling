@@ -46,11 +46,19 @@ def test_ci_reruns_when_a_pr_title_is_edited():
 def test_test_job_checks_the_pr_title_before_anything_slow():
     steps = yaml.safe_load(text("ci.yml"))["jobs"]["test"]["steps"]
     runs = [s.get("run", "") for s in steps]
-    title = steps[runs.index('uv run cz check --message "$TITLE"')]
+    check = 'uvx --from commitizen==4.19.3 cz check --message "$TITLE"'
+    title = steps[runs.index(check)]
     assert title["if"] == "github.event_name == 'pull_request'"
     assert title["env"]["TITLE"] == "${{ github.event.pull_request.title }}"
-    pre_commit = "uv run pre-commit run --all-files --show-diff-on-failure"
-    assert runs.index("uv sync --locked") < steps.index(title)
+    pre_commit = (
+        "uvx --python 3.12 pre-commit run --all-files --show-diff-on-failure"
+    )
+    tooling = next(
+        i
+        for i, s in enumerate(steps)
+        if s.get("uses", "").startswith("wraith-proxy/wraith-tooling@")
+    )
+    assert steps.index(title) < tooling
     assert steps.index(title) < runs.index(pre_commit)
 
 
@@ -149,7 +157,7 @@ def test_drift_issues_come_from_the_tested_helper():
     run = step["run"]
     assert step["env"]["GH_TOKEN"] == "${{ steps.app.outputs.token }}"
     assert "gh issue list --state all" in run
-    assert "scripts/drift_issues.py" in run
+    assert "wraith-drift-issues" in run
     assert "--search" not in run
 
 
@@ -218,7 +226,7 @@ exit 0
 def test_drift_step_queues_new_and_changed_drift_only(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    for name, script in (("uv", STUB_UV), ("gh", STUB_ISSUES)):
+    for name, script in (("wraith-drift-issues", STUB_UV), ("gh", STUB_ISSUES)):
         (bin_dir / name).write_text(script)
         (bin_dir / name).chmod(0o755)
     shas = {}
