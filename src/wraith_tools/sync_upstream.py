@@ -120,6 +120,17 @@ def _file_entries(path: Path) -> list[Entry]:
         match = COMMENT_SOURCE.match(line)
         if match:
             return _entries(match[1])
+    if path.suffix == ".md":
+        fence = next(
+            (i for i, ln in enumerate(lines) if ln.startswith("```")), None
+        )
+        if fence is not None:
+            block = lines[fence + 1 : fence + 3]
+            if block and block[0].startswith("#!"):
+                block = block[1:]
+            match = block and COMMENT_SOURCE.match(block[0])
+            if match:
+                return _entries(match[1])
     return []
 
 

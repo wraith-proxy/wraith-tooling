@@ -58,7 +58,7 @@ def test_test_job_checks_the_pr_title_before_anything_slow():
         for i, s in enumerate(steps)
         if s.get("uses", "").startswith("wraith-proxy/wraith-tooling@")
     )
-    assert steps.index(title) < tooling
+    assert tooling < steps.index(title)
     assert steps.index(title) < runs.index(pre_commit)
 
 

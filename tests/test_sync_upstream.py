@@ -348,3 +348,22 @@ def test_drift_section_says_how_to_resolve(tmp_path):
 
 def test_every_companion_has_a_named_list():
     assert set(NAMED) == set(COMPANIONS)
+
+
+def test_provenance_reads_source_in_first_fenced_block_of_md(tmp_path):
+    (tmp_path / "t.md").write_text(
+        "# t\n\n```bash\n#!/usr/bin/env bash\n"
+        "# source: MP@d1478fc:a/t.sh\n```\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "u.md").write_text(
+        "# u\n\n```\n# source: MP@d1478fc:a/u.sh\n```\n", encoding="utf-8"
+    )
+    (tmp_path / "late.md").write_text(
+        "```\nx\n```\n```\n# source: MP@d1478fc:a/l.sh\n```\n",
+        encoding="utf-8",
+    )
+    assert provenance(tmp_path) == {
+        "t.md": [("MP", "d1478fc", "a/t.sh")],
+        "u.md": [("MP", "d1478fc", "a/u.sh")],
+    }
