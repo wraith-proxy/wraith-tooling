@@ -226,7 +226,10 @@ exit 0
 def test_drift_step_queues_new_and_changed_drift_only(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
-    for name, script in (("wraith-drift-issues", STUB_UV), ("gh", STUB_ISSUES)):
+    for name, script in (
+        ("wraith-drift-issues", STUB_UV),
+        ("gh", STUB_ISSUES),
+    ):
         (bin_dir / name).write_text(script)
         (bin_dir / name).chmod(0o755)
     shas = {}
