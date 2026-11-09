@@ -399,3 +399,13 @@ def test_companion_that_is_also_derived_still_bumps(tmp_path, capsys):
     local(tmp_path / "root", "m.md", OURS, f"MP@{old_sha[:7]}:m.md")
     run(tmp_path)
     assert "MP" in capsys.readouterr().out.split()
+
+
+def test_drifted_companion_is_not_bumped(tmp_path, capsys):
+    old_sha = upstream(
+        tmp_path / "old", "MP", {"m.md": BASE, "tdd/SKILL.md": "a\n"}
+    )
+    upstream(tmp_path / "new", "MP", {"m.md": THEIRS, "tdd/SKILL.md": "b\n"})
+    local(tmp_path / "root", "m.md", OURS, f"MP@{old_sha[:7]}:m.md")
+    run(tmp_path)
+    assert "MP" not in capsys.readouterr().out.split()

@@ -460,12 +460,15 @@ def main(argv: list[str] | None = None) -> int:
                 blocked.update(key for key, _, _ in entries)
         if change:
             changes[rel] = change
+    drift = _companion_drift(args.old, args.new)
+    # A companion whose named skills drifted waits for its re-vet, even
+    # when its derived files merged cleanly.
+    blocked.update(drift)
     for rel, key, was, now in moves:
         if key not in blocked:
             path = args.root / rel
             text = path.read_text(encoding="utf-8")
             path.write_text(text.replace(was, now), encoding="utf-8")
-    drift = _companion_drift(args.old, args.new)
 
     pins = []
     for path in sorted(p for p in args.new.iterdir() if p.is_dir()):
