@@ -10,6 +10,8 @@ from pathlib import Path
 
 import yaml
 
+from wraith_tools.layout import plugin_root
+
 SKILL_KEYS = {
     "name",
     "description",
@@ -215,7 +217,7 @@ def upstream_scope(root):
             yield path, text
 
 
-def check_text_rules(root, skills, agents, out):
+def check_text_rules(root, skills, agents, out, repo=None):
     known = {d.name for d in skills} | {a.stem for a in agents}
     for sub in ("skills", "agents", "hooks"):
         for path in sorted((root / sub).rglob("*")):
@@ -226,13 +228,16 @@ def check_text_rules(root, skills, agents, out):
             for name in sorted(set(WRAITH_RE.findall(text))):
                 if name not in known:
                     out.append(f"{rel}: L10 unresolved wraith:{name}")
-    em_paths = []
-    for sub in EM_DASH_DIRS:
-        em_paths += [p for p in (root / sub).rglob("*") if p.is_file()]
-    em_paths += [root / n for n in EM_DASH_FILES if (root / n).is_file()]
+    repo = repo or root
+    bases = sorted({root, repo})
+    em_paths = set()
+    for base in bases:
+        for sub in EM_DASH_DIRS:
+            em_paths |= {p for p in (base / sub).rglob("*") if p.is_file()}
+        em_paths |= {base / n for n in EM_DASH_FILES if (base / n).is_file()}
     for path in sorted(em_paths):
         if EM_DASH in (read_text(path) or ""):
-            rel = path.relative_to(root).as_posix()
+            rel = path.relative_to(repo).as_posix()
             out.append(f"{rel}: L11 contains em dash")
     for path, text in upstream_scope(root):
         for token in UPSTREAM_TOKENS:
@@ -258,7 +263,8 @@ def check_tree(root, out):
 
 
 def lint(root):
-    root = Path(root)
+    repo = Path(root)
+    root = plugin_root(repo)
     out = []
     sroot = root / "skills"
     skills = (
@@ -276,7 +282,7 @@ def lint(root):
         check_agent(root, agent, out)
     if len(skills) > MAX_SKILLS:
         out.append(f"skills: L16 {len(skills)} skills (max {MAX_SKILLS})")
-    check_text_rules(root, skills, agents, out)
+    check_text_rules(root, skills, agents, out, repo)
     check_tree(root, out)
     return out
 

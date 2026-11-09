@@ -73,3 +73,17 @@ def test_main_modes(tmp_path, monkeypatch, capsys):
     assert "wrote 1 files" in capsys.readouterr().out
     assert build_copilot.main(["--check"]) == 0
     assert "copilot agents up to date" in capsys.readouterr().out
+
+
+def test_build_under_plugin_subfolder(tmp_path):
+    meta = tmp_path / ".claude-plugin"
+    meta.mkdir()
+    (meta / "marketplace.json").write_text(
+        '{"plugins":[{"source":"./plugin"}]}', encoding="utf-8"
+    )
+    (tmp_path / "plugin").mkdir()
+    make(tmp_path / "plugin", stem="a")
+    build_copilot.build(tmp_path, False)
+    out = tmp_path / "plugin/com.github.copilot/agents/a.agent.md"
+    assert out.exists()
+    assert not (tmp_path / "com.github.copilot").exists()

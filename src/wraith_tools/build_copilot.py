@@ -6,6 +6,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from wraith_tools.layout import plugin_root
+
 KEYS = ("name", "description", "tools")
 TARGET = "com.github.copilot/agents"
 
@@ -29,8 +31,9 @@ def render_agent(source_text: str, stem: str) -> str:
 
 
 def build(root: Path, check: bool) -> list[str]:
-    src_dir = root / "agents"
-    out_dir = root / TARGET
+    base = plugin_root(root)
+    src_dir = base / "agents"
+    out_dir = base / TARGET
     wanted: dict[str, str] = {}
     if src_dir.is_dir():
         for src in sorted(src_dir.glob("*.md")):
