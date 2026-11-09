@@ -148,15 +148,15 @@ def test_clean_merge_applied_and_sha_rewritten(tmp_path):
 
 
 def test_prints_only_fully_clean_moved_keys(tmp_path, capsys):
-    sp = upstream(tmp_path / "old", "SP", {"f.md": BASE})
+    ka = upstream(tmp_path / "old", "KA", {"f.md": BASE})
     gs = upstream(tmp_path / "old", "GS", {"g.md": BASE})
     upstream(tmp_path / "old", "MP", {"m.md": BASE})
     upstream(tmp_path / "old", "TF", {"t.md": BASE})
-    upstream(tmp_path / "new", "SP", {"f.md": THEIRS})
+    upstream(tmp_path / "new", "KA", {"f.md": THEIRS})
     upstream(tmp_path / "new", "GS", {"g.md": THEIRS})
     upstream(tmp_path / "new", "MP", {"m.md": THEIRS})
     upstream(tmp_path / "new", "TF", {"t.md": THEIRS})
-    local(tmp_path / "root", "f.md", OURS, f"SP@{sp[:7]}:f.md")
+    local(tmp_path / "root", "f.md", OURS, f"KA@{ka[:7]}:f.md")
     local(
         tmp_path / "root",
         "g.md",
@@ -164,7 +164,7 @@ def test_prints_only_fully_clean_moved_keys(tmp_path, capsys):
         f"GS@{gs[:7]}:g.md",
     )
     run(tmp_path)
-    assert capsys.readouterr().out.split() == ["MP", "SP"]
+    assert capsys.readouterr().out.split() == ["KA", "MP"]
 
 
 def test_conflict_left_untouched(tmp_path):
