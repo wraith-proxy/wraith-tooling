@@ -150,11 +150,11 @@ def test_clean_merge_applied_and_sha_rewritten(tmp_path):
 def test_prints_only_fully_clean_moved_keys(tmp_path, capsys):
     ka = upstream(tmp_path / "old", "KA", {"f.md": BASE})
     gs = upstream(tmp_path / "old", "GS", {"g.md": BASE})
-    upstream(tmp_path / "old", "MP", {"m.md": BASE})
+    upstream(tmp_path / "old", "AA", {"m.md": BASE})
     upstream(tmp_path / "old", "TF", {"t.md": BASE})
     upstream(tmp_path / "new", "KA", {"f.md": THEIRS})
     upstream(tmp_path / "new", "GS", {"g.md": THEIRS})
-    upstream(tmp_path / "new", "MP", {"m.md": THEIRS})
+    upstream(tmp_path / "new", "AA", {"m.md": THEIRS})
     upstream(tmp_path / "new", "TF", {"t.md": THEIRS})
     local(tmp_path / "root", "f.md", OURS, f"KA@{ka[:7]}:f.md")
     local(
@@ -164,7 +164,7 @@ def test_prints_only_fully_clean_moved_keys(tmp_path, capsys):
         f"GS@{gs[:7]}:g.md",
     )
     run(tmp_path)
-    assert capsys.readouterr().out.split() == ["KA", "MP"]
+    assert capsys.readouterr().out.split() == ["AA", "KA"]
 
 
 def test_conflict_left_untouched(tmp_path):
@@ -367,3 +367,35 @@ def test_provenance_reads_source_in_first_fenced_block_of_md(tmp_path):
         "t.md": [("MP", "d1478fc", "a/t.sh")],
         "u.md": [("MP", "d1478fc", "a/u.sh")],
     }
+
+
+def test_unchanged_file_follows_a_moved_pin(tmp_path):
+    old_sha = upstream(tmp_path / "old", "AA", {"f.md": BASE})
+    new_sha = upstream(
+        tmp_path / "new", "AA", {"f.md": BASE, "other.md": "x\n"}
+    )
+    path = local(tmp_path / "root", "f.md", OURS, f"AA@{old_sha[:7]}:f.md")
+    run(tmp_path)
+    assert f"AA@{new_sha[:7]}:f.md" in path.read_text(encoding="utf-8")
+
+
+def test_blocked_key_keeps_its_unchanged_source_lines(tmp_path):
+    old_sha = upstream(tmp_path / "old", "AA", {"f.md": BASE, "g.md": BASE})
+    upstream(tmp_path / "new", "AA", {"f.md": BASE, "g.md": THEIRS})
+    keep = local(tmp_path / "root", "f.md", OURS, f"AA@{old_sha[:7]}:f.md")
+    local(
+        tmp_path / "root",
+        "g.md",
+        BASE.replace("line6", "line6 ours"),
+        f"AA@{old_sha[:7]}:g.md",
+    )
+    run(tmp_path)
+    assert f"AA@{old_sha[:7]}:f.md" in keep.read_text(encoding="utf-8")
+
+
+def test_companion_that_is_also_derived_still_bumps(tmp_path, capsys):
+    old_sha = upstream(tmp_path / "old", "MP", {"m.md": BASE})
+    upstream(tmp_path / "new", "MP", {"m.md": THEIRS})
+    local(tmp_path / "root", "m.md", OURS, f"MP@{old_sha[:7]}:m.md")
+    run(tmp_path)
+    assert "MP" in capsys.readouterr().out.split()
