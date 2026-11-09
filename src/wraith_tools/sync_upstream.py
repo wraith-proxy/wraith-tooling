@@ -12,7 +12,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-COMPANIONS = ("DBT", "GCP", "TF", "SP")
+COMPANIONS = ("DBT", "GCP", "TF", "SP", "MP")
 # The companion skills wraith names, from the Decision sections of
 # docs/adr/0002 to 0004 and 0006. Drift anywhere else in a vendor repo is
 # out of scope: wraith never vetted those skills and never points to them
@@ -83,6 +83,19 @@ NAMED = {
             "receiving-code-review",
             "finishing-a-development-branch",
             "writing-skills",
+        }
+    ),
+    "MP": frozenset(
+        {
+            "tdd",
+            "diagnosing-bugs",
+            "grilling",
+            "handoff",
+            "domain-modeling",
+            "code-review",
+            "setup-matt-pocock-skills",
+            "pr",
+            "writing-for-agents",
         }
     ),
 }
@@ -250,21 +263,31 @@ class Change:
 
 def _sync_file(
     root: Path, rel: str, entries: list[Entry], old: Path, new: Path
-) -> tuple[Row | None, Change | None]:
+) -> tuple[Row | None, Change | None, list[tuple[str, str, str]]]:
     changed = []
-    for key, _sha7, upath in entries:
+    # Source lines of files upstream left alone; main() moves them with
+    # the pin, or they drift from upstream-pins.txt.
+    moved = []
+    for key, sha7, upath in entries:
         before = _read(old / key / upath)
         after = _read(new / key / upath)
-        if before is None or before == after:
+        if before is None:
+            continue
+        if before == after:
+            new7 = _sha(new / key)[:7]
+            if new7 and new7 != sha7:
+                moved.append(
+                    (key, f"{key}@{sha7}:{upath}", f"{key}@{new7}:{upath}")
+                )
             continue
         changed.append((key, upath, before, after))
     if not changed:
-        return None, None
+        return None, None, moved
     key, upath, before, after = changed[0]
     if len(entries) > 1:
-        return Row(rel, "composite"), None
+        return Row(rel, "composite"), None, []
     if after is None:
-        return Row(rel, "removed"), None
+        return Row(rel, "removed"), None, []
     diff = _diff(before, after, upath)
     hits = risk_scan(diff)
     change = Change(key, upath, diff)
@@ -276,12 +299,12 @@ def _sync_file(
         theirs_file.write_text(after, encoding="utf-8")
         merged, clean = merge_file(ours, base_file, theirs_file)
     if not clean:
-        return Row(rel, "conflict", hits), change
+        return Row(rel, "conflict", hits), change, []
     old7 = entries[0][1]
     new7 = _sha(new / key)[:7]
     merged = merged.replace(f"{key}@{old7}:{upath}", f"{key}@{new7}:{upath}")
     ours.write_text(merged, encoding="utf-8")
-    return Row(rel, "clean", hits), change
+    return Row(rel, "clean", hits), change, []
 
 
 def _named_dirs(root: Path, key: str) -> set[str]:
@@ -423,8 +446,14 @@ def main(argv: list[str] | None = None) -> int:
     rows: list[Row] = []
     changes: dict[str, Change] = {}
     blocked: set[str] = set()
+    derived: set[str] = set()
+    moves: list[tuple[str, str, str, str]] = []
     for rel, entries in provenance(args.root).items():
-        row, change = _sync_file(args.root, rel, entries, args.old, args.new)
+        row, change, moved = _sync_file(
+            args.root, rel, entries, args.old, args.new
+        )
+        derived.update(key for key, _, _ in entries)
+        moves += [(rel, key, was, now) for key, was, now in moved]
         if row:
             rows.append(row)
             if row.status != "clean":
@@ -432,6 +461,14 @@ def main(argv: list[str] | None = None) -> int:
         if change:
             changes[rel] = change
     drift = _companion_drift(args.old, args.new)
+    # A companion whose named skills drifted waits for its re-vet, even
+    # when its derived files merged cleanly.
+    blocked.update(drift)
+    for rel, key, was, now in moves:
+        if key not in blocked:
+            path = args.root / rel
+            text = path.read_text(encoding="utf-8")
+            path.write_text(text.replace(was, now), encoding="utf-8")
 
     pins = []
     for path in sorted(p for p in args.new.iterdir() if p.is_dir()):
@@ -447,7 +484,7 @@ def main(argv: list[str] | None = None) -> int:
         " ".join(
             key
             for key, _, _, sha in pins
-            if key not in COMPANIONS
+            if (key not in COMPANIONS or key in derived)
             and key not in blocked
             and _sha(args.old / key) != sha
         )

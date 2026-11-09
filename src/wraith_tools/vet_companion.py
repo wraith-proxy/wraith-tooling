@@ -30,6 +30,7 @@ ADRS = {
     "GCP": "0003-companion-google.md",
     "TF": "0004-companion-hashicorp.md",
     "SP": "0006-process-skills-to-companions.md",
+    "MP": "0006-process-skills-to-companions.md",
 }
 DIFF_LIMIT = 150_000
 BODY_DIFF_LIMIT = 45_000
