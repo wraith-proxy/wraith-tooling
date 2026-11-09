@@ -307,3 +307,30 @@ def test_missing_notices_file(tmp_path):
         skill(metadata="\n  source: SP@abcdef1:a")
     )
     assert "L7" in rules(lint_skills.lint(tmp_path))
+
+
+def test_subfolder_plugin_and_root_em_dash(tmp_path):
+    make_repo(
+        tmp_path,
+        {
+            ".claude-plugin/marketplace.json": (
+                '{"plugins":[{"source":"./plugin"}]}'
+            ),
+            "plugin/THIRD_PARTY_NOTICES.md": NOTICES,
+            "plugin/skills/demo/SKILL.md": skill(),
+            "evals/x.md": f"a {EM} b\n",
+        },
+    )
+    problems = lint_skills.lint(tmp_path)
+    assert [p for p in problems if p.startswith("evals/x.md: L11")]
+
+
+def test_subfolder_problems_are_reported_from_the_repo_root(tmp_path):
+    (tmp_path / ".claude-plugin").mkdir()
+    (tmp_path / ".claude-plugin" / "marketplace.json").write_text(
+        '{"plugins": [{"source": "./plugin"}]}'
+    )
+    (tmp_path / "plugin" / "skills" / "broken").mkdir(parents=True)
+    problems = lint_skills.lint(tmp_path)
+    assert problems
+    assert all(p.startswith("plugin/") for p in problems), problems

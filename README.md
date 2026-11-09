@@ -64,3 +64,7 @@ Run from the plugin repo root.
 uv sync
 uv run pytest
 ```
+
+## Plugin root
+
+The hooks find the plugin folder from `.claude-plugin/marketplace.json`: a single plugin whose `source` is `./<folder>` is linted, built and checked there, and CI, docs and evals stay outside it. A missing marketplace file or `"./"` means the repository root.

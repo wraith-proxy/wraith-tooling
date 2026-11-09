@@ -63,3 +63,8 @@ def test_cli_reads_stdin_paths_and_prints_type():
     assert run("") == "chore"
     assert run("uv.lock\nscripts/a.py\n") == "chore"
     assert run("uv.lock\nskills/x/SKILL.md\n") == "fix"
+
+
+def test_subfolder_prefix_decides_what_ships():
+    assert commit_type(["plugin/skills/x/SKILL.md"], "plugin/") == "fix"
+    assert commit_type(["README.md", "docs/a.md"], "plugin/") == "chore"
