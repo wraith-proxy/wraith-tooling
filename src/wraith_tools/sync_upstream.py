@@ -12,10 +12,11 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-COMPANIONS = ("DBT", "GCP", "TF")
+COMPANIONS = ("DBT", "GCP", "TF", "SP")
 # The companion skills wraith names, from the Decision sections of
-# docs/adr/0002 to 0004. Drift anywhere else in a vendor repo is out of
-# scope: wraith never vetted those skills and never points to them (#91).
+# docs/adr/0002 to 0004 and 0006. Drift anywhere else in a vendor repo is
+# out of scope: wraith never vetted those skills and never points to them
+# (#91).
 # The context-engineering skills named in ADR 0003 live in a repo this
 # sync does not fetch, so they are not listed here.
 NAMED = {
@@ -65,6 +66,23 @@ NAMED = {
             "terraform-test",
             "refactor-module",
             "terraform-search-import",
+        }
+    ),
+    "SP": frozenset(
+        {
+            "brainstorming",
+            "writing-plans",
+            "executing-plans",
+            "subagent-driven-development",
+            "dispatching-parallel-agents",
+            "using-git-worktrees",
+            "test-driven-development",
+            "systematic-debugging",
+            "verification-before-completion",
+            "requesting-code-review",
+            "receiving-code-review",
+            "finishing-a-development-branch",
+            "writing-skills",
         }
     ),
 }

@@ -183,20 +183,12 @@ def test_vet_job_holds_no_write_credentials():
     assert checkout["uses"].startswith("actions/checkout@")
     assert checkout["with"]["persist-credentials"] is False
     assert "GH_TOKEN" not in job_text("vet")
-    with_key = [s for s in vet["steps"] if "ANTHROPIC_API_KEY" in str(s)]
-    assert [s["name"] for s in with_key] == ["Machine read"]
+    assert not any(s.get("name") == "Machine read" for s in vet["steps"])
 
 
-def test_machine_read_has_no_tools_and_a_budget():
-    step = next(
-        s for s in job("vet")["steps"] if s.get("name") == "Machine read"
-    )
-    run = step["run"]
-    for flag in ("--bare", '--tools ""', "--no-session-persistence"):
-        assert flag in run
-    assert "--max-budget-usd 1" in run
-    for loose in ("--allowedTools", "bypassPermissions", "--dangerously"):
-        assert loose not in run
+def test_no_workflow_reads_a_model_api_key():
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        assert "ANTHROPIC_API_KEY" not in path.read_text(encoding="utf-8")
 
 
 def test_propose_job_opens_a_review_pr_and_never_merges():
