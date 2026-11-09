@@ -284,7 +284,17 @@ def lint(root):
         out.append(f"skills: L16 {len(skills)} skills (max {MAX_SKILLS})")
     check_text_rules(root, skills, agents, out, repo)
     check_tree(root, out)
-    return out
+    if root == repo:
+        return out
+    # Report every path from the repo root. L11 already does; the other
+    # checks name paths inside the plugin folder.
+    pre = root.relative_to(repo).as_posix()
+    return [
+        m
+        if ": L11 " in m
+        else (pre + m[1:] if m.startswith(".:") else f"{pre}/{m}")
+        for m in out
+    ]
 
 
 def main(argv=None):
