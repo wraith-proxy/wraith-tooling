@@ -3,7 +3,25 @@ from pathlib import Path
 
 import yaml
 
+from wraith_tools.layout import plugin_root
+
 ROOT = Path.cwd()
+PLUGIN = plugin_root(ROOT)
+ALLOWED = {
+    ".claude-plugin",
+    "plugin.json",
+    "com.github.copilot",
+    "skills",
+    "agents",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "PRIVACY.md",
+    "TERMS.md",
+    "SUPPORT.md",
+    "THIRD_PARTY_NOTICES.md",
+}
+
 URL = "https://github.com/wraith-proxy/wraith-skills"
 SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 CLAUDE_KEYS = {
@@ -29,7 +47,9 @@ def load(*parts):
 
 
 def test_claude_manifest_fields():
-    data = load(".claude-plugin", "plugin.json")
+    data = json.loads(
+        (PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
     assert data["name"] == "wraith"
     assert data["license"] == "MIT"
     assert data["repository"] == URL
@@ -38,7 +58,7 @@ def test_claude_manifest_fields():
 
 
 def test_copilot_manifest_fields():
-    data = load("plugin.json")
+    data = json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))
     assert data["$schema"] == SCHEMA
     assert data["name"] == "wraith"
     assert data["license"] == "MIT"
@@ -51,12 +71,25 @@ def test_marketplace_entry():
     assert data["name"] == "wraith-proxy"
     assert len(data["plugins"]) == 1
     assert data["plugins"][0]["name"] == "wraith"
-    assert data["plugins"][0]["source"] == "./"
+    assert (ROOT / data["plugins"][0]["source"]).resolve() == PLUGIN.resolve()
 
 
 def test_manifest_versions_match():
     text = (ROOT / ".cz.yaml").read_text(encoding="utf-8")
     py = str(yaml.safe_load(text)["commitizen"]["version"])
-    claude = load(".claude-plugin", "plugin.json")["version"]
-    copilot = load("plugin.json")["version"]
+    claude = json.loads(
+        (PLUGIN / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )["version"]
+    copilot = json.loads((PLUGIN / "plugin.json").read_text(encoding="utf-8"))[
+        "version"
+    ]
     assert py == claude == copilot
+
+
+def test_plugin_folder_holds_only_plugin_content():
+    if PLUGIN == ROOT:
+        return
+    assert {p.name for p in PLUGIN.iterdir()} <= ALLOWED
+    assert (PLUGIN / "LICENSE").read_bytes() == (ROOT / "LICENSE").read_bytes()
+    readme = (PLUGIN / "README.md").read_text(encoding="utf-8")
+    assert len(readme.split()) >= 40
